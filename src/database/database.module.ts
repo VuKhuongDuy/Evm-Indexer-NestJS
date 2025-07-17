@@ -8,12 +8,11 @@ import { dbConfig } from './dbconfig';
 
 @Module({
   imports: [
-    // TypeOrmModule.forRootAsync({
-    //   imports: [ConfigModule],
-    //   useFactory: (configService: ConfigService) =>
-    //     dbConfig(configService),
-    //   inject: [ConfigService],
-    // }),
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: (configService: ConfigService) => dbConfig(configService),
+      inject: [ConfigService],
+    }),
     TypeOrmModule.forFeature([Config]),
   ],
   providers: [DatabaseService, DatabaseInitCommand],
