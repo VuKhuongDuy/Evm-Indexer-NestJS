@@ -2,8 +2,8 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { ConsoleCommand } from './console.command';
 import { AppConfigService } from './config/config.service';
+import { DatabaseModule } from './database/database.module';
 import {
   appConfig,
   databaseConfig,
@@ -12,6 +12,7 @@ import {
   redisConfig,
   loggingConfig,
 } from './config/env.config';
+import { ConsoleModule } from './console/console.module';
 
 @Module({
   imports: [
@@ -26,8 +27,11 @@ import {
         loggingConfig,
       ],
     }),
+    DatabaseModule,
+    ConsoleModule,
   ],
   controllers: [AppController],
-  providers: [AppService, ConsoleCommand, AppConfigService],
+  providers: [AppService, AppConfigService],
+  exports: [AppConfigService],
 })
 export class AppModule {}
