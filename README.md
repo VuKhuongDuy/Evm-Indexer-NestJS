@@ -32,6 +32,33 @@
 $ npm install
 ```
 
+## Database Setup
+
+The project includes automatic database initialization. See [DATABASE_INIT.md](./DATABASE_INIT.md) for detailed information.
+
+### Quick Start with Docker
+
+```bash
+# Start database and application
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+```
+
+### Manual Setup
+
+```bash
+# Start database only
+docker-compose up -d postgres
+
+# Initialize database
+npm run cli init-db
+
+# Start application
+npm run start:dev
+```
+
 ## Compile and run the project
 
 ```bash
