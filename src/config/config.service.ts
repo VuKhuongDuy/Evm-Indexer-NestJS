@@ -21,8 +21,37 @@ export class AppConfigService {
     return this.configService.get<string>('app.corsOrigin');
   }
 
-  get databaseUrl(): string {
-    return this.configService.get<string>('database.url');
+  // Database configuration
+  get databaseType(): string {
+    return this.configService.get<string>('database.type');
+  }
+
+  get databaseHost(): string {
+    return this.configService.get<string>('database.host');
+  }
+
+  get databasePort(): number {
+    return this.configService.get<number>('database.port');
+  }
+
+  get databaseUsername(): string {
+    return this.configService.get<string>('database.username');
+  }
+
+  get databasePassword(): string {
+    return this.configService.get<string>('database.password');
+  }
+
+  get databaseName(): string {
+    return this.configService.get<string>('database.database');
+  }
+
+  get databaseSynchronize(): boolean {
+    return this.configService.get<boolean>('database.synchronize');
+  }
+
+  get databaseEntities(): any[] {
+    return this.configService.get<any[]>('database.entities');
   }
 
   get networkRpcUrl(): string {
@@ -59,7 +88,14 @@ export class AppConfigService {
         corsOrigin: this.corsOrigin,
       },
       database: {
-        url: this.databaseUrl,
+        type: this.databaseType,
+        host: this.databaseHost,
+        port: this.databasePort,
+        username: this.databaseUsername,
+        password: this.databasePassword,
+        database: this.databaseName,
+        synchronize: this.databaseSynchronize,
+        entities: this.databaseEntities,
       },
       network: {
         rpcUrl: this.networkRpcUrl,

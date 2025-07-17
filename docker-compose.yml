@@ -1,0 +1,60 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: evm-indexer-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: evm_indexer
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    networks:
+      - evm-indexer-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d evm_indexer"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # app:
+  #   build:
+  #     context: .
+  #     dockerfile: Dockerfile
+  #   container_name: evm-indexer-app
+  #   restart: unless-stopped
+  #   environment:
+  #     - DATABASE_HOST=postgres
+  #     - DATABASE_PORT=5432
+  #     - DATABASE_USERNAME=postgres
+  #     - DATABASE_PASSWORD=postgres
+  #     - DATABASE_NAME=evm_indexer
+  #     - DATABASE_SYNCHRONIZE=true
+  #     - NODE_ENV=development
+  #   ports:
+  #     - "3000:3000"
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #   networks:
+  #     - evm-indexer-network
+  #   volumes:
+  #     - ./scripts/start.sh:/app/start.sh
+  #   command: >
+  #     sh -c "
+  #       chmod +x /app/start.sh &&
+  #       /app/start.sh
+  #     "
+
+volumes:
+  postgres_data:
+
+networks:
+  evm-indexer-network:
+    driver: bridge 

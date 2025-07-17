@@ -8,12 +8,17 @@ export const appConfig = registerAs('app', () => ({
 }));
 
 export const databaseConfig = registerAs('database', () => ({
-  url: process.env.DATABASE_URL,
+  type: process.env.DATABASE_TYPE || 'postgres',
   host: process.env.DATABASE_HOST || 'localhost',
   port: parseInt(process.env.DATABASE_PORT, 10) || 5432,
-  name: process.env.DATABASE_NAME || 'evm_indexer',
-  user: process.env.DATABASE_USER || 'postgres',
-  password: process.env.DATABASE_PASSWORD || 'password',
+  username: process.env.DATABASE_USERNAME || 'postgres',
+  password: process.env.DATABASE_PASSWORD || 'postgres',
+  database: process.env.DATABASE_NAME || 'evm_indexer',
+  synchronize: process.env.DATABASE_SYNCHRONIZE === 'true' || true,
+  entities: [],
+  logging: process.env.DATABASE_LOGGING === 'true' || false,
+  migrations: process.env.DATABASE_MIGRATIONS || [],
+  migrationsRun: process.env.DATABASE_MIGRATIONS_RUN === 'true' || false,
 }));
 
 export const networkConfig = registerAs('network', () => ({
