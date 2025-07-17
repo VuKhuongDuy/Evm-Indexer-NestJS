@@ -9,6 +9,10 @@ export class AppConfigService {
     return this.configService.get<number>('app.port');
   }
 
+  get contractAddress(): string {
+    return this.configService.get<string>('contract.address');
+  }
+
   get nodeEnv(): string {
     return this.configService.get<string>('app.nodeEnv');
   }
@@ -110,6 +114,9 @@ export class AppConfigService {
       },
       logging: {
         level: this.logLevel,
+      },
+      contract: {
+        address: this.contractAddress,
       },
     };
   }

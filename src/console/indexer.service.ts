@@ -1,7 +1,6 @@
 import { Command, CommandRunner } from 'nest-commander';
 import { Injectable } from '@nestjs/common';
 import { ethers } from 'ethers';
-import { CONTRACT_ADDRESS } from '../shared/constant';
 import { sleep } from '../shared/utils';
 import { AppConfigService } from '../config/config.service';
 import { DatabaseService } from '../database/database.service';
@@ -23,9 +22,7 @@ export class IndexerService extends CommandRunner {
     this.provider = new ethers.JsonRpcProvider(
       this.configService.networkRpcUrl,
     );
-    this.contractAddress = CONTRACT_ADDRESS;
-
-    console.log(this.configService.networkRpcUrl);
+    this.contractAddress = this.configService.contractAddress;
   }
 
   async run(): Promise<void> {

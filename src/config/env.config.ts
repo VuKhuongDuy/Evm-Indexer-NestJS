@@ -41,3 +41,7 @@ export const redisConfig = registerAs('redis', () => ({
 export const loggingConfig = registerAs('logging', () => ({
   level: process.env.LOG_LEVEL || 'debug',
 }));
+
+export const contractConfig = registerAs('contract', () => ({
+  address: process.env.CONTRACT_ADDRESS,
+}));

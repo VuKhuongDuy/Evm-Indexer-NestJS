@@ -11,6 +11,7 @@ import {
   jwtConfig,
   redisConfig,
   loggingConfig,
+  contractConfig,
 } from './config/env.config';
 import { ConsoleModule } from './console/console.module';
 
@@ -25,6 +26,7 @@ import { ConsoleModule } from './console/console.module';
         jwtConfig,
         redisConfig,
         loggingConfig,
+        contractConfig,
       ],
     }),
     DatabaseModule,
