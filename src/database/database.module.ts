@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Config } from './entities/config.entity';
+import { Order } from './entities/order.entity';
 import { DatabaseService } from './database.service';
 import { DatabaseInitCommand } from './database-init.command';
 import { dbConfig } from './dbconfig';
@@ -13,7 +14,7 @@ import { dbConfig } from './dbconfig';
       useFactory: (configService: ConfigService) => dbConfig(configService),
       inject: [ConfigService],
     }),
-    TypeOrmModule.forFeature([Config]),
+    TypeOrmModule.forFeature([Config, Order]),
   ],
   providers: [DatabaseService, DatabaseInitCommand],
   exports: [TypeOrmModule, DatabaseService],

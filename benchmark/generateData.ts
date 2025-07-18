@@ -2,14 +2,11 @@ import { ethers } from 'ethers';
 import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import * as path from 'path';
+import CONTRACT_ABI from '../src/config/market-abi-json.json';
+import ERC20_ABI from '../src/config/erc20-abi.json';
 
 // Load environment variables
 dotenv.config();
-
-// Contract ABI
-const CONTRACT_ABI = JSON.parse(
-  fs.readFileSync(path.join(__dirname, 'abi.json'), 'utf8'),
-);
 
 // Environment variables
 const RPC_URL = process.env.RPC_URL || 'http://localhost:8545';
@@ -37,6 +34,12 @@ if (!TOKEN_TO_PAY) {
 const provider = new ethers.JsonRpcProvider(RPC_URL);
 const wallet = new ethers.Wallet(PRIVATE_KEY, provider);
 const contract = new ethers.Contract(CONTRACT_ADDRESS, CONTRACT_ABI, wallet);
+const tokenToPayContract = new ethers.Contract(TOKEN_TO_PAY, ERC20_ABI, wallet);
+const tokenToSellContract = new ethers.Contract(
+  TOKEN_TO_SELL,
+  ERC20_ABI,
+  wallet,
+);
 
 // Helper function to generate random amount within a range
 function getRandomAmount(
@@ -49,9 +52,13 @@ function getRandomAmount(
 }
 
 // Helper function to generate random price
-function getRandomPrice(min: number, max: number): bigint {
-  const random = Math.random() * (max - min) + min;
-  return ethers.parseUnits(random.toFixed(18), 18);
+function getRandomPrice(
+  min: number,
+  max: number,
+  decimals: number = 18,
+): bigint {
+  const random = (Math.random() * (max - min) + min).toFixed(decimals);
+  return BigInt(random * 10 ** decimals);
 }
 
 // Helper function to generate random minimum order size
@@ -80,6 +87,22 @@ async function generateOrders() {
   const orders = [];
   let successCount = 0;
   let failureCount = 0;
+  const decimalsTokenPay = await tokenToPayContract.decimals();
+
+  const allowanceToPay = await tokenToPayContract.allowance(
+    wallet.address,
+    CONTRACT_ADDRESS,
+  );
+  if (allowanceToPay < ethers.parseUnits('1000', decimalsTokenPay)) {
+    await tokenToPayContract.approve(CONTRACT_ADDRESS, ethers.MaxUint256);
+  }
+  const allowanceToSell = await tokenToSellContract.allowance(
+    wallet.address,
+    CONTRACT_ADDRESS,
+  );
+  if (allowanceToSell < ethers.parseUnits('1000', 18)) {
+    await tokenToSellContract.approve(CONTRACT_ADDRESS, ethers.MaxUint256);
+  }
 
   for (let i = 0; i < NUM_ORDERS; i++) {
     try {
@@ -87,20 +110,27 @@ async function generateOrders() {
 
       // Generate random parameters
       const amountToSell = getRandomAmount(1, 1000); // 1-1000 tokens
-      const pricePerToken = getRandomPrice(0.1, 10); // 0.1-10 tokens per unit
+      const pricePerToken = getRandomPrice(0.1, 10, Number(decimalsTokenPay)); // 0.1-10 tokens per unit
       const minOrderSize = getRandomMinOrderSize(amountToSell);
 
       console.log(
         `   Amount to sell: ${ethers.formatEther(amountToSell)} tokens`,
       );
       console.log(
-        `   Price per token: ${ethers.formatEther(pricePerToken)} tokens`,
+        `   Price per token: ${BigInt(pricePerToken) / decimalsTokenPay} tokens`,
       );
       console.log(
         `   Min order size: ${ethers.formatEther(minOrderSize)} tokens`,
       );
 
       // Place the order
+      console.log({
+        TOKEN_TO_SELL,
+        TOKEN_TO_PAY,
+        amountToSell,
+        pricePerToken,
+        minOrderSize,
+      });
       const tx = await contract.placeOrder(
         TOKEN_TO_SELL,
         TOKEN_TO_PAY,
@@ -151,6 +181,7 @@ async function generateOrders() {
         await sleep(2000);
       }
     } catch (error) {
+      console.log(error);
       console.error(`   ❌ Failed to place order ${i + 1}:`, error.message);
       failureCount++;
 

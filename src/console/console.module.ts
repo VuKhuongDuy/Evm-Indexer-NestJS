@@ -14,6 +14,7 @@ import { IndexerService } from './indexer.service';
 import { dbConfig } from '../database/dbconfig';
 import { AppConfigService } from '../config/config.service';
 import { DatabaseService } from '../database/database.service';
+import { Order } from '../database/entities/order.entity';
 
 @Module({
   imports: [
@@ -22,7 +23,7 @@ import { DatabaseService } from '../database/database.service';
       useFactory: (configService: ConfigService) => dbConfig(configService),
       inject: [ConfigService],
     }),
-    TypeOrmModule.forFeature([Config]),
+    TypeOrmModule.forFeature([Config, Order]),
     ConfigModule.forRoot({
       isGlobal: true,
       load: [

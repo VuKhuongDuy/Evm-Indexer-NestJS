@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Config } from './entities/config.entity';
+import { Order } from './entities/order.entity';
 
 @Injectable()
 export class DatabaseService {
@@ -10,6 +11,8 @@ export class DatabaseService {
   constructor(
     @InjectRepository(Config)
     private readonly configRepository: Repository<Config>,
+    @InjectRepository(Order)
+    private readonly orderRepository: Repository<Order>,
   ) {}
 
   async initializeDatabase(): Promise<void> {
@@ -82,5 +85,31 @@ export class DatabaseService {
 
   async setConfig(key: string, value: string): Promise<void> {
     await this.configRepository.save({ key, value });
+  }
+
+  async createOrder(order: Order): Promise<void> {
+    await this.orderRepository.save(order);
+  }
+
+  async getOrders(): Promise<Order[]> {
+    return this.orderRepository.find();
+  }
+
+  async getOrder(orderId: string): Promise<Order | null> {
+    return this.orderRepository.findOne({ where: { orderId: orderId } });
+  }
+
+  async updateOrder(order: Order): Promise<void> {
+    const existingOrder = await this.orderRepository.findOne({
+      where: { orderId: order.orderId },
+    });
+    if (existingOrder) {
+      const updatedOrder = { ...existingOrder, ...order };
+      await this.orderRepository.save(updatedOrder);
+    }
+  }
+
+  async deleteOrder(orderId: string): Promise<void> {
+    await this.orderRepository.delete(orderId);
   }
 }
