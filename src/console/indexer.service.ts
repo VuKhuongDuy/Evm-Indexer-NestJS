@@ -44,6 +44,11 @@ export class IndexerService extends CommandRunner {
     const batchSize = 100;
     let currentBlock = startingBlock;
 
+    const targetStartBlock = 8791770;
+    const targetEndBlock = 8791905;
+    let targetStartTime: number | null = null;
+    let targetEndTime: number | null = null;
+
     while (true) {
       const latestBlockNumber = await this.provider.getBlockNumber();
 
@@ -64,6 +69,22 @@ export class IndexerService extends CommandRunner {
 
       if (logs.length > 0) {
         await this.txHandler(logs);
+      }
+
+      if (currentBlock <= targetStartBlock && endBlock >= targetStartBlock) {
+        targetStartTime = Date.now();
+      }
+
+      if (currentBlock <= targetEndBlock && endBlock >= targetEndBlock) {
+        targetEndTime = Date.now();
+      }
+
+      if (targetStartTime !== null && targetEndTime !== null) {
+        const timeTaken = targetEndTime - targetStartTime;
+        console.log(
+          `Time taken to handle from block ${targetStartBlock} to block ${targetEndBlock}: ${timeTaken} ms`,
+        );
+        break;
       }
 
       currentBlock = endBlock + 1;

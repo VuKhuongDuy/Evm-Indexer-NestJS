@@ -124,13 +124,6 @@ async function generateOrders() {
       );
 
       // Place the order
-      console.log({
-        TOKEN_TO_SELL,
-        TOKEN_TO_PAY,
-        amountToSell,
-        pricePerToken,
-        minOrderSize,
-      });
       const tx = await contract.placeOrder(
         TOKEN_TO_SELL,
         TOKEN_TO_PAY,
@@ -141,37 +134,37 @@ async function generateOrders() {
 
       console.log(`   Transaction hash: ${tx.hash}`);
 
-      // Wait for transaction confirmation
-      const receipt = await tx.wait();
-      console.log(
-        `   ✅ Order placed successfully! Block: ${receipt.blockNumber}`,
-      );
+      // // Wait for transaction confirmation
+      // const receipt = await tx.wait();
+      // console.log(
+      //   `   ✅ Order placed successfully! Block: ${receipt.blockNumber}`,
+      // );
 
-      // Get the order ID from the event
-      const orderPlacedEvent = receipt.logs.find((log: any) => {
-        try {
-          const parsed = contract.interface.parseLog(log);
-          return parsed?.name === 'OrderPlaced';
-        } catch {
-          return false;
-        }
-      });
+      // // Get the order ID from the event
+      // const orderPlacedEvent = receipt.logs.find((log: any) => {
+      //   try {
+      //     const parsed = contract.interface.parseLog(log);
+      //     return parsed?.name === 'OrderPlaced';
+      //   } catch {
+      //     return false;
+      //   }
+      // });
 
-      let orderId = null;
-      if (orderPlacedEvent) {
-        const parsed = contract.interface.parseLog(orderPlacedEvent);
-        orderId = parsed?.args[0];
-      }
+      // let orderId = null;
+      // if (orderPlacedEvent) {
+      //   const parsed = contract.interface.parseLog(orderPlacedEvent);
+      //   orderId = parsed?.args[0];
+      // }
 
-      orders.push({
-        orderId: orderId?.toString(),
-        txHash: tx.hash,
-        amountToSell: ethers.formatEther(amountToSell),
-        pricePerToken: ethers.formatEther(pricePerToken),
-        minOrderSize: ethers.formatEther(minOrderSize),
-        blockNumber: receipt.blockNumber,
-        timestamp: new Date().toISOString(),
-      });
+      // orders.push({
+      //   orderId: orderId?.toString(),
+      //   txHash: tx.hash,
+      //   amountToSell: ethers.formatEther(amountToSell),
+      //   pricePerToken: ethers.formatEther(pricePerToken),
+      //   minOrderSize: ethers.formatEther(minOrderSize),
+      //   blockNumber: receipt.blockNumber,
+      //   timestamp: new Date().toISOString(),
+      // });
 
       successCount++;
 
@@ -200,10 +193,10 @@ async function generateOrders() {
     `📊 Success rate: ${((successCount / NUM_ORDERS) * 100).toFixed(2)}%`,
   );
 
-  // Save orders to file
-  const outputFile = path.join(__dirname, 'generated-orders.json');
-  fs.writeFileSync(outputFile, JSON.stringify(orders, null, 2));
-  console.log(`💾 Orders saved to: ${outputFile}`);
+  // // Save orders to file
+  // const outputFile = path.join(__dirname, 'generated-orders.json');
+  // fs.writeFileSync(outputFile, JSON.stringify(orders, null, 2));
+  // console.log(`💾 Orders saved to: ${outputFile}`);
 
   return orders;
 }
