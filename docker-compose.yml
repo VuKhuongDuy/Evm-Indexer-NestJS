@@ -11,14 +11,35 @@ services:
       POSTGRES_PASSWORD: postgres
       PGDATA: /var/lib/postgresql/data/pgdata
     ports:
-      - "5432:5432"
+      - '5432:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
     networks:
       - evm-indexer-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d evm_indexer"]
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d evm_indexer']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: evm-indexer-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: admin
+      RABBITMQ_DEFAULT_PASS: admin
+      RABBITMQ_DEFAULT_VHOST: /
+    ports:
+      - '5672:5672' # AMQP protocol port
+      - '15672:15672' # Management UI port
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - evm-indexer-network
+    healthcheck:
+      test: ['CMD-SHELL', 'rabbitmq-diagnostics ping']
       interval: 30s
       timeout: 10s
       retries: 3
@@ -54,7 +75,8 @@ services:
 
 volumes:
   postgres_data:
+  rabbitmq_data:
 
 networks:
   evm-indexer-network:
-    driver: bridge 
+    driver: bridge
