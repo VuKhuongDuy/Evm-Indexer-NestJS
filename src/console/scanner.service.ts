@@ -5,13 +5,14 @@ import { sleep } from '../shared/utils';
 import { AppConfigService } from '../config/config.service';
 import { DatabaseService } from '../database/database.service';
 import { marketAbi as CONTRACT_ABI } from '../config/market-abi';
+import { RabbitMQProducer } from '../rmq/rmq.producer';
 
 @Injectable()
 @Command({
-  name: 'run-indexer',
-  description: 'Run the indexer',
+  name: 'run-scanner',
+  description: 'Run the scanner',
 })
-export class IndexerService extends CommandRunner {
+export class ScannerService extends CommandRunner {
   public provider: ethers.JsonRpcProvider;
   public contractAddress: string;
   public contract: ethers.Contract;
@@ -19,12 +20,13 @@ export class IndexerService extends CommandRunner {
   constructor(
     private readonly configService: AppConfigService,
     private readonly databaseService: DatabaseService,
+    private readonly rabbitMQProducer: RabbitMQProducer,
   ) {
     super();
     this.provider = new ethers.JsonRpcProvider(
       this.configService.networkRpcUrl,
-    );
-    this.contractAddress = this.configService.contractAddress;
+    ); // Init Blockchain RPC Provider
+    this.contractAddress = this.configService.contractAddress; // P2P Market smart contract address
     this.contract = new ethers.Contract(
       this.contractAddress,
       CONTRACT_ABI,
@@ -33,13 +35,11 @@ export class IndexerService extends CommandRunner {
   }
 
   async run(): Promise<void> {
-    const fromBlockValue = await this.databaseService.getConfig('fromBlock');
+    const fromBlockValue = await this.databaseService.getConfig('fromBlock'); // Get the last indexed block from the database
     const startingBlock = parseInt(fromBlockValue || '0');
     if (!startingBlock) {
       throw new Error('Starting block not found in the database');
     }
-
-    console.log('Starting block:', startingBlock);
 
     const batchSize = 100;
     let currentBlock = startingBlock;
@@ -67,18 +67,17 @@ export class IndexerService extends CommandRunner {
         address: [this.contractAddress],
       });
 
+      console.log('logs', logs);
       if (logs.length > 0) {
-        await this.txHandler(logs);
+        await this.pushLogsToQueue(logs);
       }
 
       if (currentBlock <= targetStartBlock && endBlock >= targetStartBlock) {
         targetStartTime = Date.now();
       }
-
       if (currentBlock <= targetEndBlock && endBlock >= targetEndBlock) {
         targetEndTime = Date.now();
       }
-
       if (targetStartTime !== null && targetEndTime !== null) {
         const timeTaken = targetEndTime - targetStartTime;
         console.log(
@@ -102,14 +101,14 @@ export class IndexerService extends CommandRunner {
     }
   }
 
-  async txHandler(logs: any[]): Promise<void> {
+  async pushLogsToQueue(logs: any[]): Promise<void> {
     for (const log of logs) {
       try {
         const parsedLog = this.contract.interface.parseLog(log);
-
+        let logData = {};
         switch (parsedLog.name) {
           case 'OrderPlaced':
-            const orderPlacedData = {
+            logData = {
               orderId: parsedLog.args.orderId.toString(),
               seller: parsedLog.args.seller,
               tokenToSell: parsedLog.args.tokenToSell,
@@ -121,67 +120,39 @@ export class IndexerService extends CommandRunner {
               isActive: true,
               createdAtBlockNumber: log.blockNumber,
             };
-            console.log('OrderPlaced id:', orderPlacedData.orderId);
-            await this.databaseService.createOrder(orderPlacedData);
             break;
-
           case 'OrderFilled':
-            const eventFilledData = {
+            logData = {
               orderId: parsedLog.args.orderId.toString(),
               buyer: parsedLog.args.buyer,
               amountFilled: parsedLog.args.amountFilled.toString(),
               paymentAmount: parsedLog.args.paymentAmount.toString(),
             };
-            console.log('OrderFilled id:', eventFilledData.orderId);
-            const existingOrder = await this.databaseService.getOrder(
-              eventFilledData.orderId,
-            );
-            if (!existingOrder) {
-              console.log('Order not found:', eventFilledData.orderId);
-              break;
-            }
-            await this.databaseService.updateOrder({
-              ...existingOrder,
-              amountRemaining: (
-                BigInt(existingOrder.amountToSell) -
-                BigInt(eventFilledData.amountFilled)
-              ).toString(),
-            });
-
             break;
-
           case 'OrderCancelled':
-            const orderCancelledData = {
+            logData = {
               orderId: parsedLog.args.orderId.toString(),
               seller: parsedLog.args.seller,
             };
-            console.log('OrderCancelled id:', orderCancelledData.orderId);
-            await this.databaseService.deleteOrder(orderCancelledData.orderId);
             break;
-
           case 'OrderUpdated':
-            const eventUpdatedData = {
+            logData = {
               orderId: parsedLog.args.orderId.toString(),
               newPrice: parsedLog.args.newPrice.toString(),
               newMinOrderSize: parsedLog.args.newMinOrderSize.toString(),
             };
-            const order = await this.databaseService.getOrder(
-              eventUpdatedData.orderId,
-            );
-            if (!order) {
-              console.log('Order not found:', eventUpdatedData.orderId);
-              break;
-            }
-            await this.databaseService.updateOrder({
-              ...order,
-              pricePerToken: eventUpdatedData.newPrice,
-              minOrderSize: eventUpdatedData.newMinOrderSize,
-            });
             break;
-
           default:
             console.log('Unknown event:', parsedLog.name);
+            break;
         }
+
+        // Publish to RabbitMQ
+        await this.rabbitMQProducer.sendToRawLogsQueue({
+          ...logData,
+          blockNumber: log.blockNumber,
+          transactionHash: log.transactionHash,
+        });
       } catch (error) {
         console.error('Error parsing log:', error);
       }

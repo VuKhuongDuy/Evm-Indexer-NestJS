@@ -12,8 +12,10 @@ import {
   redisConfig,
   loggingConfig,
   contractConfig,
+  rabbitmqConfig,
 } from './config/env.config';
 import { ConsoleModule } from './console/console.module';
+import { RabbitMQModule } from './rmq/rmq.module';
 
 @Module({
   imports: [
@@ -27,10 +29,12 @@ import { ConsoleModule } from './console/console.module';
         redisConfig,
         loggingConfig,
         contractConfig,
+        rabbitmqConfig,
       ],
     }),
     DatabaseModule,
     ConsoleModule,
+    RabbitMQModule,
   ],
   controllers: [AppController],
   providers: [AppService, AppConfigService],
