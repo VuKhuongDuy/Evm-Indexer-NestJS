@@ -16,6 +16,7 @@ import {
 } from './config/env.config';
 import { ConsoleModule } from './console/console.module';
 import { RabbitMQModule } from './rmq/rmq.module';
+import { OrderModule } from './order/order.module';
 
 @Module({
   imports: [
@@ -35,6 +36,7 @@ import { RabbitMQModule } from './rmq/rmq.module';
     DatabaseModule,
     ConsoleModule,
     RabbitMQModule,
+    OrderModule,
   ],
   controllers: [AppController],
   providers: [AppService, AppConfigService],
