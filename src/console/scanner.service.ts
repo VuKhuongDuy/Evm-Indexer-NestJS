@@ -41,16 +41,12 @@ export class ScannerService extends CommandRunner {
       throw new Error('Starting block not found in the database');
     }
 
-    const batchSize = 100;
+    const batchSize = 10;
     let currentBlock = startingBlock;
-
-    const targetStartBlock = 8791770;
-    const targetEndBlock = 8791905;
-    let targetStartTime: number | null = null;
-    let targetEndTime: number | null = null;
 
     while (true) {
       const latestBlockNumber = await this.provider.getBlockNumber();
+      const startTime = Date.now();
 
       const endBlock =
         latestBlockNumber - currentBlock < batchSize
@@ -67,28 +63,13 @@ export class ScannerService extends CommandRunner {
         address: [this.contractAddress],
       });
 
-      console.log('logs', logs);
       if (logs.length > 0) {
         await this.pushLogsToQueue(logs);
       }
 
-      if (currentBlock <= targetStartBlock && endBlock >= targetStartBlock) {
-        targetStartTime = Date.now();
-      }
-      if (currentBlock <= targetEndBlock && endBlock >= targetEndBlock) {
-        targetEndTime = Date.now();
-      }
-      if (targetStartTime !== null && targetEndTime !== null) {
-        const timeTaken = targetEndTime - targetStartTime;
-        console.log(
-          `Time taken to handle from block ${targetStartBlock} to block ${targetEndBlock}: ${timeTaken} ms`,
-        );
-        break;
-      }
-
       currentBlock = endBlock + 1;
 
-      if (endBlock === latestBlockNumber) {
+      if (endBlock >= latestBlockNumber - 1) {
         await sleep(1000);
       }
 
@@ -96,6 +77,13 @@ export class ScannerService extends CommandRunner {
         await this.databaseService.setConfig(
           'fromBlock',
           currentBlock.toString(),
+        );
+      }
+
+      const timeTaken = Date.now() - startTime;
+      if (logs.length > 0) {
+        console.log(
+          `Time taken to handle ${logs.length} logs: ${timeTaken} ms`,
         );
       }
     }
@@ -149,6 +137,7 @@ export class ScannerService extends CommandRunner {
 
         // Publish to RabbitMQ
         await this.rabbitMQProducer.sendToRawLogsQueue({
+          name: parsedLog.name,
           ...logData,
           blockNumber: log.blockNumber,
           transactionHash: log.transactionHash,
