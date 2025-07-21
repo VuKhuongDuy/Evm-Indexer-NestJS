@@ -2,6 +2,7 @@ import { Command, CommandRunner } from 'nest-commander';
 import { Injectable } from '@nestjs/common';
 import { ethers } from 'ethers';
 import { sleep } from '../shared/utils';
+import { getBlockNumberWithRetry, getLogsWithRetry } from '../shared/rpc-utils';
 import { AppConfigService } from '../config/config.service';
 import { DatabaseService } from '../database/database.service';
 import { marketAbi as CONTRACT_ABI } from '../config/market-abi';
@@ -35,61 +36,90 @@ export class ScannerService extends CommandRunner {
   }
 
   async run(): Promise<void> {
-    const fromBlockValue = await this.databaseService.getConfig('fromBlock'); // Get the last indexed block from the database
-    const startingBlock = parseInt(fromBlockValue || '0');
-    if (!startingBlock) {
+    const startingBlockStr = await this.databaseService.getConfig('fromBlock');
+    if (!startingBlockStr) {
       throw new Error('Starting block not found in the database');
     }
 
-    const batchSize = 10;
-    let currentBlock = startingBlock;
+    const batchSize = this.configService.indexerBatchSize;
+    let startingBlock = parseInt(startingBlockStr);
+    let latestBlockNumber;
 
     while (true) {
-      const latestBlockNumber = await this.provider.getBlockNumber();
-      const startTime = Date.now();
+      // Get the latest block number if needed from Database.
+      latestBlockNumber = await this.getLatestBlockNumberIfNeeded(
+        latestBlockNumber,
+        startingBlock,
+        batchSize,
+      );
 
-      const endBlock =
-        latestBlockNumber - currentBlock < batchSize
-          ? latestBlockNumber
-          : currentBlock + batchSize;
-      if (endBlock < currentBlock) {
-        currentBlock = endBlock;
-      }
+      const endBlock = this.calculateEndBlock(
+        latestBlockNumber,
+        startingBlock,
+        batchSize,
+      );
 
-      console.log({ fromBlock: currentBlock, toBlock: endBlock });
-      const logs = await this.provider.getLogs({
-        fromBlock: currentBlock,
-        toBlock: endBlock,
-        address: [this.contractAddress],
-      });
+      // Fetch logs from startingBlock to endBlock via RPC blockchain endpoint.
+      const logs = await this.fetchLogs(startingBlock, endBlock);
 
+      // Push logs to queue then dataUpdater service will handle them.
+      // Handle exception if any log not pushed to queue.
+      let failedBlockNumber;
       if (logs.length > 0) {
-        await this.pushLogsToQueue(logs);
+        failedBlockNumber = await this.pushLogsToQueue(logs);
       }
+      if (failedBlockNumber) {
+        startingBlock = failedBlockNumber;
+      } else {
+        startingBlock = endBlock + 1;
+      }
+      await this.databaseService.setConfig(
+        'fromBlock',
+        startingBlock.toString(),
+      );
 
-      currentBlock = endBlock + 1;
-
-      if (endBlock >= latestBlockNumber - 1) {
+      // If indexer updated to the latest block, sleep 1 second.
+      if (endBlock >= latestBlockNumber) {
         await sleep(1000);
-      }
-
-      if (currentBlock - startingBlock >= batchSize) {
-        await this.databaseService.setConfig(
-          'fromBlock',
-          currentBlock.toString(),
-        );
-      }
-
-      const timeTaken = Date.now() - startTime;
-      if (logs.length > 0) {
-        console.log(
-          `Time taken to handle ${logs.length} logs: ${timeTaken} ms`,
-        );
       }
     }
   }
 
-  async pushLogsToQueue(logs: any[]): Promise<void> {
+  private async getLatestBlockNumberIfNeeded(
+    latestBlockNumber: number | undefined,
+    startingBlock: number,
+    batchSize: number,
+  ): Promise<number> {
+    if (
+      latestBlockNumber === undefined ||
+      latestBlockNumber - startingBlock < batchSize
+    ) {
+      // Use getBlockNumberWithRetry to handle exception if network error.
+      return await getBlockNumberWithRetry(this.provider);
+    }
+    return latestBlockNumber;
+  }
+
+  private calculateEndBlock(
+    latestBlockNumber: number,
+    startingBlock: number,
+    batchSize: number,
+  ): number {
+    return latestBlockNumber - startingBlock < batchSize
+      ? latestBlockNumber
+      : startingBlock + batchSize;
+  }
+
+  private async fetchLogs(fromBlock: number, toBlock: number): Promise<any[]> {
+    // Use getLogsWithRetry to handle exception if network error.
+    return await getLogsWithRetry(this.provider, {
+      fromBlock,
+      toBlock,
+      address: [this.contractAddress],
+    });
+  }
+
+  async pushLogsToQueue(logs: any[]): Promise<void | number> {
     for (const log of logs) {
       try {
         const parsedLog = this.contract.interface.parseLog(log);
@@ -144,6 +174,7 @@ export class ScannerService extends CommandRunner {
         });
       } catch (error) {
         console.error('Error parsing log:', error);
+        return log.blockNumber;
       }
     }
   }

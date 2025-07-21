@@ -88,7 +88,14 @@ export class DatabaseService {
   }
 
   async createOrder(order: Order): Promise<void> {
-    await this.orderRepository.save(order);
+    const existingOrder = await this.orderRepository.findOne({
+      where: { orderId: order.orderId },
+    });
+    if (!existingOrder) {
+      await this.orderRepository.save(order);
+    } else {
+      throw new Error(`Order ${order.orderId} already exists`);
+    }
   }
 
   async getOrders(): Promise<Order[]> {
