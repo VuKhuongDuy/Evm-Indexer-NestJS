@@ -110,6 +110,10 @@ export class AppConfigService {
     return this.configService.get<string>('rabbitmq.queueProcessedEvents');
   }
 
+  get indexerBatchSize(): number {
+    return this.configService.get<number>('indexer.batchSize');
+  }
+
   // Helper method to get all configuration
   getAllConfig() {
     return {
@@ -145,6 +149,9 @@ export class AppConfigService {
       },
       contract: {
         address: this.contractAddress,
+      },
+      indexer: {
+        batchSize: this.indexerBatchSize,
       },
       rabbitmq: {
         host: this.rabbitmqHost,

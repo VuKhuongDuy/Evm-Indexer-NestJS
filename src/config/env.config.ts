@@ -56,3 +56,7 @@ export const rabbitmqConfig = registerAs('rabbitmq', () => ({
   queueProcessedEvents:
     process.env.RABBITMQ_QUEUE_PROCESSED_EVENTS || 'indexer.processed_events.q',
 }));
+
+export const indexerConfig = registerAs('indexer', () => ({
+  batchSize: parseInt(process.env.INDEXER_BATCH_SIZE, 10) || 10,
+}));
