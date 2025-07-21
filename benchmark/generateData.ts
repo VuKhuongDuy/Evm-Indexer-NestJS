@@ -57,8 +57,8 @@ function getRandomPrice(
   max: number,
   decimals: number = 18,
 ): bigint {
-  const random = (Math.random() * (max - min) + min).toFixed(decimals);
-  return BigInt(random * 10 ** decimals);
+  const random = Math.random() * (max - min) + min;
+  return BigInt(Math.floor(random * 10 ** decimals));
 }
 
 // Helper function to generate random minimum order size
