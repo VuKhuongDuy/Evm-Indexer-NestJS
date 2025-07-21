@@ -7,7 +7,7 @@ import { marketAbi as CONTRACT_ABI } from '../config/market-abi';
 import { RabbitMQProducer } from '@/rmq/rmq.producer';
 
 @Controller()
-export class DataUpdaterController {
+export class NotifierController {
   public provider: ethers.JsonRpcProvider;
   public contractAddress: string;
   public contract: ethers.Contract;

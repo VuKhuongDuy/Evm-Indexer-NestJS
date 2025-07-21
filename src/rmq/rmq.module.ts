@@ -5,7 +5,7 @@ import { RabbitMQService } from './rmq.service';
 import { RabbitMQProducer } from './rmq.producer';
 import { RabbitMQConsumer } from './rmq.consumer';
 import { rabbitmqConfig as rabbitmqConfigEnv } from '@/config/env.config';
-import { rabbitmqConfig } from './rmqConfig';
+import { rabbitmqProducerConfig } from './rmqConfig';
 import { AppConfigService } from '@/config/config.service';
 
 @Module({
@@ -19,14 +19,17 @@ import { AppConfigService } from '@/config/config.service';
         name: 'RABBITMQ_SERVICE_RAW_LOGS',
         imports: [ConfigModule],
         useFactory: (configService: ConfigService) =>
-          rabbitmqConfig(configService, configService.get('rabbitmq.queueLog')),
+          rabbitmqProducerConfig(
+            configService,
+            configService.get('rabbitmq.queueLog'),
+          ),
         inject: [ConfigService],
       },
       {
         name: 'RABBITMQ_SERVICE_PROCESSED_EVENTS',
         imports: [ConfigModule],
         useFactory: (configService: ConfigService) =>
-          rabbitmqConfig(
+          rabbitmqProducerConfig(
             configService,
             configService.get('rabbitmq.queueProcessedEvents'),
           ),

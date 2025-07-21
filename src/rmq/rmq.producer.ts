@@ -21,6 +21,6 @@ export class RabbitMQProducer {
   async publishLogToEventsQueue(message: any) {
     return await this.clientProcessedEvents
       .send(this.configService.rabbitmqQueueProcessedEvents, message)
-      .toPromise();
+      .subscribe();
   }
 }

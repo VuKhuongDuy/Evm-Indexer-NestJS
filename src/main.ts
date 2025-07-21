@@ -2,7 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { rabbitmqConfig } from './rmq/rmqConfig';
+import { rabbitmqConsumerConfig } from './rmq/rmqConfig';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -10,10 +10,13 @@ async function bootstrap() {
 
   // Create microservice for RabbitMQ
   app.connectMicroservice(
-    rabbitmqConfig(configService, configService.get('rabbitmq.queueLog')),
+    rabbitmqConsumerConfig(
+      configService,
+      configService.get('rabbitmq.queueLog'),
+    ),
   );
   app.connectMicroservice(
-    rabbitmqConfig(
+    rabbitmqConsumerConfig(
       configService,
       configService.get('rabbitmq.queueProcessedEvents'),
     ),

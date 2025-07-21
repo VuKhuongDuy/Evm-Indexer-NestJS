@@ -36,12 +36,12 @@ export class ScannerService extends CommandRunner {
   }
 
   async run(): Promise<void> {
+    const batchSize = this.configService.indexerBatchSize;
     const startingBlockStr = await this.databaseService.getConfig('fromBlock');
     if (!startingBlockStr) {
       throw new Error('Starting block not found in the database');
     }
 
-    const batchSize = this.configService.indexerBatchSize;
     let startingBlock = parseInt(startingBlockStr);
     let latestBlockNumber;
 

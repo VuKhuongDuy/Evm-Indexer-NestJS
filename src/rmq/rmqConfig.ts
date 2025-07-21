@@ -1,7 +1,8 @@
 import { ClientProvider, Transport } from '@nestjs/microservices';
 import { ConfigService } from '@nestjs/config';
 
-export const rabbitmqConfig = (
+// Configuration for producers (sending messages)
+export const rabbitmqProducerConfig = (
   configService: ConfigService,
   queueName: string,
 ): ClientProvider => ({
@@ -14,11 +15,29 @@ export const rabbitmqConfig = (
     queueOptions: {
       durable: true,
     },
-    // Enable manual acknowledgment
+  },
+});
+
+// Configuration for consumers (receiving messages with ACK)
+export const rabbitmqConsumerConfig = (
+  configService: ConfigService,
+  queueName: string,
+): ClientProvider => ({
+  transport: Transport.RMQ,
+  options: {
+    urls: [
+      `amqp://${configService.get('rabbitmq.username')}:${configService.get('rabbitmq.password')}@${configService.get('rabbitmq.host')}:${configService.get('rabbitmq.port')}/${configService.get('rabbitmq.vhost')}`,
+    ],
+    queue: queueName,
+    queueOptions: {
+      durable: true,
+    },
+    // Consumer-specific settings
     noAck: false,
-    // Prefetch count - how many messages to prefetch
     prefetchCount: 1,
-    // Enable persistent messages
     persistent: true,
   },
 });
+
+// Legacy function for backward compatibility
+export const rabbitmqConfig = rabbitmqProducerConfig;

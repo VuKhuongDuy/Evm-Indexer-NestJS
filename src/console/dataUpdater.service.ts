@@ -47,7 +47,7 @@ export class DataUpdaterController {
     const originalMsg = context.getMessage();
 
     // Extract message metadata
-    const metadata: MessageMetadata = {
+    let metadata: MessageMetadata = {
       retryCount: originalMsg.properties.headers?.retryCount || 0,
       maxRetries: this.maxRetries,
       originalTimestamp:
@@ -82,11 +82,12 @@ export class DataUpdaterController {
       console.log('Message acknowledged successfully');
     } catch (error) {
       console.error('Error processing log:', error);
+      console.log({ error });
 
       // Check if we should retry or move to dead letter queue
       if (metadata.retryCount < this.maxRetries) {
         // Increment retry count and requeue with delay
-        const updatedHeaders = {
+        metadata = {
           ...originalMsg.properties.headers,
           retryCount: metadata.retryCount + 1,
           originalTimestamp: metadata.originalTimestamp,
@@ -118,14 +119,14 @@ export class DataUpdaterController {
 
   private async handleOrderPlaced(log: any): Promise<void> {
     const orderPlacedData = {
-      orderId: log.args.orderId.toString(),
-      seller: log.args.seller,
-      tokenToSell: log.args.tokenToSell,
-      tokenToPay: log.args.tokenToPay,
-      amountToSell: log.args.amountToSell.toString(),
+      orderId: log.orderId.toString(),
+      seller: log.seller,
+      tokenToSell: log.tokenToSell,
+      tokenToPay: log.tokenToPay,
+      amountToSell: log.amountToSell.toString(),
       amountRemaining: '0',
-      pricePerToken: log.args.pricePerToken.toString(),
-      minOrderSize: log.args.minOrderSize.toString(),
+      pricePerToken: log.pricePerToken.toString(),
+      minOrderSize: log.minOrderSize.toString(),
       isActive: true,
       createdAtBlockNumber: log.blockNumber,
     };
@@ -143,10 +144,10 @@ export class DataUpdaterController {
 
   private async handleOrderFilled(log: any): Promise<void> {
     const eventFilledData = {
-      orderId: log.args.orderId.toString(),
-      buyer: log.args.buyer,
-      amountFilled: log.args.amountFilled.toString(),
-      paymentAmount: log.args.paymentAmount.toString(),
+      orderId: log.orderId.toString(),
+      buyer: log.buyer,
+      amountFilled: log.amountFilled.toString(),
+      paymentAmount: log.paymentAmount.toString(),
     };
 
     const existingOrder = await this.databaseService.getOrder(
@@ -176,8 +177,8 @@ export class DataUpdaterController {
 
   private async handleOrderCancelled(log: any): Promise<void> {
     const orderCancelledData = {
-      orderId: log.args.orderId.toString(),
-      seller: log.args.seller,
+      orderId: log.orderId.toString(),
+      seller: log.seller,
     };
 
     await this.databaseService.deleteOrder(orderCancelledData.orderId);
@@ -193,9 +194,9 @@ export class DataUpdaterController {
 
   private async handleOrderUpdated(log: any): Promise<void> {
     const eventUpdatedData = {
-      orderId: log.args.orderId.toString(),
-      newPrice: log.args.newPrice.toString(),
-      newMinOrderSize: log.args.newMinOrderSize.toString(),
+      orderId: log.orderId.toString(),
+      newPrice: log.newPrice.toString(),
+      newMinOrderSize: log.newMinOrderSize.toString(),
     };
 
     const order = await this.databaseService.getOrder(eventUpdatedData.orderId);
