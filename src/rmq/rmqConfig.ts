@@ -14,5 +14,11 @@ export const rabbitmqConfig = (
     queueOptions: {
       durable: true,
     },
+    // Enable manual acknowledgment
+    noAck: false,
+    // Prefetch count - how many messages to prefetch
+    prefetchCount: 1,
+    // Enable persistent messages
+    persistent: true,
   },
 });
