@@ -82,6 +82,34 @@ export class AppConfigService {
     return this.configService.get<string>('logging.level');
   }
 
+  get rabbitmqHost(): string {
+    return this.configService.get<string>('rabbitmq.host');
+  }
+
+  get rabbitmqPort(): number {
+    return this.configService.get<number>('rabbitmq.port');
+  }
+
+  get rabbitmqUsername(): string {
+    return this.configService.get<string>('rabbitmq.username');
+  }
+
+  get rabbitmqPassword(): string {
+    return this.configService.get<string>('rabbitmq.password');
+  }
+
+  get rabbitmqVhost(): string {
+    return this.configService.get<string>('rabbitmq.vhost');
+  }
+
+  get rabbitmqQueueLog(): string {
+    return this.configService.get<string>('rabbitmq.queueLog');
+  }
+
+  get rabbitmqQueueProcessedEvents(): string {
+    return this.configService.get<string>('rabbitmq.queueProcessedEvents');
+  }
+
   // Helper method to get all configuration
   getAllConfig() {
     return {
@@ -117,6 +145,15 @@ export class AppConfigService {
       },
       contract: {
         address: this.contractAddress,
+      },
+      rabbitmq: {
+        host: this.rabbitmqHost,
+        port: this.rabbitmqPort,
+        username: this.rabbitmqUsername,
+        password: this.rabbitmqPassword,
+        vhost: this.rabbitmqVhost,
+        queueLog: this.rabbitmqQueueLog,
+        queueProcessedEvents: this.rabbitmqQueueProcessedEvents,
       },
     };
   }

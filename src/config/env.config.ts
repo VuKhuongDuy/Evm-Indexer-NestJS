@@ -52,4 +52,7 @@ export const rabbitmqConfig = registerAs('rabbitmq', () => ({
   username: process.env.RABBITMQ_USERNAME || 'admin',
   password: process.env.RABBITMQ_PASSWORD || 'admin',
   vhost: process.env.RABBITMQ_VHOST || '/',
+  queueLog: process.env.RABBITMQ_QUEUE_LOG || 'indexer.raw_log.q',
+  queueProcessedEvents:
+    process.env.RABBITMQ_QUEUE_PROCESSED_EVENTS || 'indexer.processed_events.q',
 }));

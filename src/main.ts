@@ -9,9 +9,14 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
 
   // Create microservice for RabbitMQ
-  app.connectMicroservice(rabbitmqConfig(configService, 'indexer.raw_log.q'));
   app.connectMicroservice(
-    rabbitmqConfig(configService, 'indexer.processed_events.q'),
+    rabbitmqConfig(configService, configService.get('rabbitmq.queueLog')),
+  );
+  app.connectMicroservice(
+    rabbitmqConfig(
+      configService,
+      configService.get('rabbitmq.queueProcessedEvents'),
+    ),
   );
   await app.startAllMicroservices();
 
