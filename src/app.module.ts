@@ -12,8 +12,10 @@ import {
   redisConfig,
   loggingConfig,
   contractConfig,
+  rabbitmqConfig,
 } from './config/env.config';
 import { ConsoleModule } from './console/console.module';
+import { RabbitMQModule } from './rmq/rmq.module';
 import { OrderModule } from './order/order.module';
 
 @Module({
@@ -28,10 +30,12 @@ import { OrderModule } from './order/order.module';
         redisConfig,
         loggingConfig,
         contractConfig,
+        rabbitmqConfig,
       ],
     }),
     DatabaseModule,
     ConsoleModule,
+    RabbitMQModule,
     OrderModule,
   ],
   controllers: [AppController],

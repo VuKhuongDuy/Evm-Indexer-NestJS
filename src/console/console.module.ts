@@ -6,15 +6,18 @@ import {
   loggingConfig,
   redisConfig,
   appConfig,
+  rabbitmqConfig,
 } from '../config/env.config';
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { IndexerService } from './indexer.service';
+import { ScannerService } from './scanner.service';
 import { dbConfig } from '../database/dbconfig';
 import { AppConfigService } from '../config/config.service';
 import { DatabaseService } from '../database/database.service';
 import { Order } from '../database/entities/order.entity';
+import { RabbitMQModule } from '../rmq/rmq.module';
+import { DataUpdaterController } from './dataUpdater.service';
 
 @Module({
   imports: [
@@ -33,9 +36,12 @@ import { Order } from '../database/entities/order.entity';
         jwtConfig,
         redisConfig,
         loggingConfig,
+        rabbitmqConfig,
       ],
     }),
+    RabbitMQModule,
   ],
-  providers: [IndexerService, AppConfigService, DatabaseService],
+  providers: [ScannerService, AppConfigService, DatabaseService],
+  controllers: [DataUpdaterController],
 })
 export class ConsoleModule {}

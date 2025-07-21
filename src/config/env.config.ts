@@ -45,3 +45,18 @@ export const loggingConfig = registerAs('logging', () => ({
 export const contractConfig = registerAs('contract', () => ({
   address: process.env.CONTRACT_ADDRESS,
 }));
+
+export const rabbitmqConfig = registerAs('rabbitmq', () => ({
+  host: process.env.RABBITMQ_HOST || 'localhost',
+  port: parseInt(process.env.RABBITMQ_PORT, 10) || 5672,
+  username: process.env.RABBITMQ_USERNAME || 'admin',
+  password: process.env.RABBITMQ_PASSWORD || 'admin',
+  vhost: process.env.RABBITMQ_VHOST || '/',
+  queueLog: process.env.RABBITMQ_QUEUE_LOG || 'indexer.raw_log.q',
+  queueProcessedEvents:
+    process.env.RABBITMQ_QUEUE_PROCESSED_EVENTS || 'indexer.processed_events.q',
+}));
+
+export const indexerConfig = registerAs('indexer', () => ({
+  batchSize: parseInt(process.env.INDEXER_BATCH_SIZE, 10) || 10,
+}));
