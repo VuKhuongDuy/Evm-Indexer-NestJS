@@ -14,6 +14,7 @@ import {
   contractConfig,
 } from './config/env.config';
 import { ConsoleModule } from './console/console.module';
+import { OrderModule } from './order/order.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { ConsoleModule } from './console/console.module';
     }),
     DatabaseModule,
     ConsoleModule,
+    OrderModule,
   ],
   controllers: [AppController],
   providers: [AppService, AppConfigService],
