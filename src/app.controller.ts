@@ -1,4 +1,4 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, Param, Query } from '@nestjs/common';
 import { AppService } from './app.service';
 import { AppConfigService } from './config/config.service';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
@@ -39,7 +39,10 @@ export class AppController {
   @Get('orders')
   @ApiOperation({ summary: 'Get all orders' })
   @ApiResponse({ status: 200, description: 'Returns all orders.' })
-  getOrders(@Param('limit') limit: number, @Param('next') next: number) {
-    return this.appService.getOrders(limit, next);
+  getOrders(
+    @Query('limit') limit: number = 200,
+    @Query('offset') offset: number = 0,
+  ) {
+    return this.appService.getOrders(limit, offset);
   }
 }

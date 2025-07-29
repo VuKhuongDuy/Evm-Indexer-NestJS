@@ -105,26 +105,31 @@ export class DatabaseService {
   ): Promise<{ orders: Order[]; total: number }> {
     // Using query builder to implement the logic from the SQL query
     // Adapted to current schema: using amountRemaining instead of amount, isActive instead of event_type
-    const queryBuilder = this.orderRepository
+
+    // First, get the distinct orderIds that meet our criteria
+    const distinctOrderIdsQuery = this.orderRepository
       .createQueryBuilder('order')
-      .distinctOn(['order.orderId'])
-      .orderBy('order.orderId', 'ASC')
-      .addOrderBy('order.createdAtBlockNumber', 'DESC')
+      .select('order.orderId')
       .where('order.isActive = :isActive', { isActive: true })
-      .andWhere('CAST(order.amountRemaining AS DECIMAL) > 0');
+      // .andWhere('CAST(order.amountRemaining AS DECIMAL) > 0')
+      .groupBy('order.orderId');
 
-    // Get total count for pagination
-    const total = await queryBuilder.getCount();
+    // Get total count of distinct orders
+    const total = await distinctOrderIdsQuery.getCount();
 
-    // Apply pagination if parameters are provided
-    if (limit !== undefined) {
-      queryBuilder.limit(limit);
-    }
-    if (offset !== undefined) {
-      queryBuilder.offset(offset);
-    }
-
-    const orders = await queryBuilder.getMany();
+    // Use parameterized query to prevent SQL injection
+    const orders = await this.orderRepository.query(
+      `
+      SELECT * FROM (
+        SELECT DISTINCT ON (o."orderId") * 
+        FROM public."order" o 
+        ORDER BY o."orderId", o."createdAtBlockNumber" DESC
+      ) latest_orders 
+      WHERE "isActive" = $1 
+      LIMIT $2 OFFSET $3
+    `,
+      [true, limit || 200, offset || 0],
+    );
 
     return { orders, total };
   }

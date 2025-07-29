@@ -9,7 +9,7 @@ export class AppService {
     return 'Hello World!';
   }
 
-  async getOrders(limit?: number, offset?: number) {
+  async getOrders(limit: number = 200, offset: number = 0) {
     return this.databaseService.getOrders(limit, offset);
   }
 }
