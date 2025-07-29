@@ -7,6 +7,7 @@ import { AppConfigService } from '../config/config.service';
 import { DatabaseService } from '../database/database.service';
 import { marketAbi as CONTRACT_ABI } from '../config/market-abi';
 import { RabbitMQProducer } from '../rmq/rmq.producer';
+import { IndexerLogger } from '../logger.service';
 
 @Injectable()
 @Command({
@@ -22,6 +23,7 @@ export class ScannerService extends CommandRunner {
     private readonly configService: AppConfigService,
     private readonly databaseService: DatabaseService,
     private readonly rabbitMQProducer: RabbitMQProducer,
+    private readonly logger: IndexerLogger,
   ) {
     super();
     this.provider = new ethers.JsonRpcProvider(
@@ -67,6 +69,9 @@ export class ScannerService extends CommandRunner {
       // Handle exception if any log not pushed to queue.
       let failedBlockNumber;
       if (logs.length > 0) {
+        this.logger.log(
+          `Found logs From block ${startingBlock} to ${endBlock}`,
+        );
         failedBlockNumber = await this.pushLogsToQueue(logs);
       }
       if (failedBlockNumber) {
@@ -162,7 +167,7 @@ export class ScannerService extends CommandRunner {
             };
             break;
           default:
-            console.log('Unknown event:', parsedLog.name);
+            this.logger.warn(`Unknown event: ${parsedLog.name}`);
             break;
         }
 
@@ -174,7 +179,7 @@ export class ScannerService extends CommandRunner {
           transactionHash: log.transactionHash,
         });
       } catch (error) {
-        console.error('Error parsing log:', error);
+        this.logger.error(`Error parsing log: ${error}`);
         return log.blockNumber;
       }
     }

@@ -1,6 +1,7 @@
 import { Injectable, Inject } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { AppConfigService } from '@/config/config.service';
+import { IndexerLogger } from '../logger.service';
 
 @Injectable()
 export class RabbitMQProducer {
@@ -10,17 +11,26 @@ export class RabbitMQProducer {
     private readonly clientLogs: ClientProxy,
     @Inject('RABBITMQ_SERVICE_PROCESSED_EVENTS')
     private readonly clientProcessedEvents: ClientProxy,
+    private readonly logger: IndexerLogger,
   ) {}
 
   async sendToRawLogsQueue(message: any) {
-    return await this.clientLogs
-      .send(this.configService.rabbitmqQueueLog, message)
-      .subscribe();
+    try {
+      return await this.clientLogs
+        .send(this.configService.rabbitmqQueueLog, message)
+        .subscribe();
+    } catch (error) {
+      this.logger.error(`Error sending to raw logs queue: ${error}`);
+    }
   }
 
   async publishLogToEventsQueue(message: any) {
-    return await this.clientProcessedEvents
-      .send(this.configService.rabbitmqQueueProcessedEvents, message)
-      .subscribe();
+    try {
+      return await this.clientProcessedEvents
+        .send(this.configService.rabbitmqQueueProcessedEvents, message)
+        .subscribe();
+    } catch (error) {
+      this.logger.error(`Error sending to processed events queue: ${error}`);
+    }
   }
 }

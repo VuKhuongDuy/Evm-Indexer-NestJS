@@ -5,6 +5,7 @@ import { getBlockNumberWithRetry } from '../shared/rpc-utils';
 import { AppConfigService } from '../config/config.service';
 import { DatabaseService } from '../database/database.service';
 import { marketAbi as CONTRACT_ABI } from '../config/market-abi';
+import { IndexerLogger } from '@/logger.service';
 
 @Injectable()
 @Command({
@@ -20,6 +21,7 @@ export class ReindexService extends CommandRunner {
   constructor(
     private readonly configService: AppConfigService,
     private readonly databaseService: DatabaseService,
+    private readonly logger: IndexerLogger,
   ) {
     super();
     this.provider = new ethers.JsonRpcProvider(
@@ -48,6 +50,7 @@ export class ReindexService extends CommandRunner {
       throw new Error('Invalid reindexBlockHeight argument');
     }
 
+    this.logger.log(`Reindex service started from block ${reindexBlockHeight}`);
     const latestBlockHeight = await getBlockNumberWithRetry(this.provider);
     const currentBlockHeight = parseInt(
       await this.databaseService.getConfig('currentBlockHeight'),
@@ -60,7 +63,12 @@ export class ReindexService extends CommandRunner {
 
     // Case 1
     if (reindexBlockHeight > currentBlockHeight) {
-      throw new Error('reindexBlockHeight is greater than latestBlockHeight');
+      this.logger.error(
+        `reindexBlockHeight ${reindexBlockHeight} is greater than currentBlockHeight ${currentBlockHeight}`,
+      );
+      throw new Error(
+        `reindexBlockHeight ${reindexBlockHeight} is greater than currentBlockHeight ${currentBlockHeight}`,
+      );
     }
 
     /**
@@ -70,12 +78,13 @@ export class ReindexService extends CommandRunner {
      */
     if (reindexBlockHeight < initializationBlock) {
       await this.databaseService.clearOrders();
-      console.log('All orders have been deleted');
+      this.logger.log(`All orders have been deleted`);
       await this.databaseService.setConfig(
         'currentBlockHeight',
         initializationBlock.toString(),
       );
-      console.log('Current block height updated to', initializationBlock);
+      this.logger.log(`Current block height updated to ${initializationBlock}`);
+      this.logger.log(`Reindex service completed`);
       return;
     }
 
@@ -88,11 +97,14 @@ export class ReindexService extends CommandRunner {
       reindexBlockHeight,
       latestBlockHeight,
     );
-    console.log('Orders have been deleted');
+    this.logger.log(
+      `Orders have been deleted from ${reindexBlockHeight} to ${latestBlockHeight}`,
+    );
     await this.databaseService.setConfig(
       'currentBlockHeight',
       reindexBlockHeight.toString(),
     );
-    console.log('Current block height updated to', reindexBlockHeight);
+    this.logger.log(`Current block height updated to ${reindexBlockHeight}`);
+    this.logger.log(`Reindex service completed`);
   }
 }

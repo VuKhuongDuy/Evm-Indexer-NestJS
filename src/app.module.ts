@@ -17,6 +17,7 @@ import {
 import { ConsoleModule } from './console/console.module';
 import { RabbitMQModule } from './rmq/rmq.module';
 import { OrderModule } from './order/order.module';
+import { IndexerLogger } from './logger.service';
 
 @Module({
   imports: [
@@ -39,7 +40,7 @@ import { OrderModule } from './order/order.module';
     OrderModule,
   ],
   controllers: [AppController],
-  providers: [AppService, AppConfigService],
-  exports: [AppConfigService],
+  providers: [AppService, AppConfigService, IndexerLogger],
+  exports: [AppConfigService, IndexerLogger],
 })
 export class AppModule {}

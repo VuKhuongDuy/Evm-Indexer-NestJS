@@ -21,6 +21,7 @@ import { RabbitMQModule } from '../rmq/rmq.module';
 import { DataUpdaterController } from './dataUpdater.service';
 import { NotifierController } from './notifier.service';
 import { ReindexService } from './reindex.service';
+import { IndexerLogger } from '@/logger.service';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { ReindexService } from './reindex.service';
     AppConfigService,
     DatabaseService,
     ReindexService,
+    IndexerLogger,
   ],
   controllers: [DataUpdaterController, NotifierController],
 })

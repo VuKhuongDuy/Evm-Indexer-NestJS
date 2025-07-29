@@ -7,6 +7,7 @@ import { RabbitMQConsumer } from './rmq.consumer';
 import { rabbitmqConfig as rabbitmqConfigEnv } from '@/config/env.config';
 import { rabbitmqProducerConfig } from './rmqConfig';
 import { AppConfigService } from '@/config/config.service';
+import { IndexerLogger } from '@/logger.service';
 
 @Module({
   imports: [
@@ -42,6 +43,7 @@ import { AppConfigService } from '@/config/config.service';
     RabbitMQProducer,
     RabbitMQConsumer,
     AppConfigService,
+    IndexerLogger,
   ],
   exports: [RabbitMQService, RabbitMQProducer, RabbitMQConsumer, ClientsModule],
 })

@@ -10,6 +10,7 @@ import { AppConfigService } from '../config/config.service';
 import { DatabaseService } from '../database/database.service';
 import { marketAbi as CONTRACT_ABI } from '../config/market-abi';
 import { RabbitMQProducer } from '@/rmq/rmq.producer';
+import { IndexerLogger } from '../logger.service';
 
 interface MessageMetadata {
   retryCount?: number;
@@ -29,6 +30,7 @@ export class DataUpdaterController {
     private readonly configService: AppConfigService,
     private readonly databaseService: DatabaseService,
     private readonly rabbitMQProducer: RabbitMQProducer,
+    private readonly logger: IndexerLogger,
   ) {
     this.provider = new ethers.JsonRpcProvider(
       this.configService.networkRpcUrl,
@@ -54,7 +56,7 @@ export class DataUpdaterController {
         originalMsg.properties.headers?.originalTimestamp || Date.now(),
     };
 
-    console.log(
+    this.logger.log(
       `Processing log (attempt ${metadata.retryCount + 1}/${this.maxRetries + 1}):`,
     );
 
@@ -73,15 +75,14 @@ export class DataUpdaterController {
           await this.handleOrderUpdated(log);
           break;
         default:
-          console.log('Unknown event:', log.name);
+          this.logger.warn(`Unknown event: ${log.name}`);
       }
 
       // Acknowledge the message only if all processing succeeds
       channel.ack(originalMsg);
-      console.log('Message acknowledged successfully');
+      this.logger.log('Message acknowledged successfully');
     } catch (error) {
-      console.error('Error processing log:', error);
-      console.log({ error });
+      this.logger.error(`Error processing log: ${error}`);
 
       // Check if we should retry or move to dead letter queue
       if (metadata.retryCount < this.maxRetries) {
@@ -94,7 +95,7 @@ export class DataUpdaterController {
 
         // Reject and requeue with updated headers
         channel.nack(originalMsg, false, true);
-        console.log(
+        this.logger.log(
           `Message rejected and requeued (attempt ${metadata.retryCount + 1}/${this.maxRetries + 1})`,
         );
 
@@ -103,15 +104,19 @@ export class DataUpdaterController {
       } else {
         // Max retries exceeded, move to dead letter queue
         channel.nack(originalMsg, false, false);
-        console.log('Max retries exceeded, message moved to dead letter queue');
+        this.logger.log(
+          'Max retries exceeded, message moved to dead letter queue',
+        );
 
         // Log the failed message for manual inspection
-        console.error('Failed message details:', {
-          log,
-          error: error.message,
-          retryCount: metadata.retryCount,
-          originalTimestamp: metadata.originalTimestamp,
-        });
+        this.logger.error(
+          `Failed message details: ${JSON.stringify({
+            log,
+            error: error.message,
+            retryCount: metadata.retryCount,
+            originalTimestamp: metadata.originalTimestamp,
+          })}`,
+        );
       }
     }
   }
@@ -139,6 +144,9 @@ export class DataUpdaterController {
 
     // Save to database
     await this.databaseService.createOrder(orderPlacedData);
+    this.logger.log(
+      `Block ${log.blockNumber} handled. Order placed data saved to database`,
+    );
   }
 
   private async handleOrderFilled(log: any): Promise<void> {
@@ -171,6 +179,9 @@ export class DataUpdaterController {
       seller: existingOrder.seller,
       transactionHash: log.transactionHash,
     });
+    this.logger.log(
+      `Block ${log.blockNumber} handled. Order filled data saved to database`,
+    );
   }
 
   private async handleOrderCancelled(log: any): Promise<void> {
@@ -189,6 +200,9 @@ export class DataUpdaterController {
       seller: existingOrder.seller,
       transactionHash: log.transactionHash,
     });
+    this.logger.log(
+      `Block ${log.blockNumber} handled. Order cancelled data saved to database`,
+    );
   }
 
   private async handleOrderUpdated(log: any): Promise<void> {
@@ -216,6 +230,9 @@ export class DataUpdaterController {
       seller: order.seller,
       transactionHash: log.transactionHash,
     });
+    this.logger.log(
+      `Block ${log.blockNumber} handled. Order updated data saved to database`,
+    );
   }
 
   private async delay(ms: number): Promise<void> {

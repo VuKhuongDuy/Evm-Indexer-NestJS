@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { AppModule } from './app.module';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { rabbitmqConsumerConfig } from './rmq/rmqConfig';
+import { IndexerLogger } from './logger.service';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -31,6 +32,9 @@ async function bootstrap() {
 
   // Global prefix
   app.setGlobalPrefix(configService.get('app.apiPrefix'));
+
+  const logger = new IndexerLogger();
+  app.useLogger(logger);
 
   // Swagger setup
   const config = new DocumentBuilder()
