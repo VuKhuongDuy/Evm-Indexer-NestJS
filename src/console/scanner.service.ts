@@ -1,13 +1,13 @@
 import { Command, CommandRunner } from 'nest-commander';
 import { Injectable } from '@nestjs/common';
-import { ethers } from 'ethers';
 import { sleep } from '../shared/utils';
-import { getBlockNumberWithRetry, getLogsWithRetry } from '../shared/rpc-utils';
 import { AppConfigService } from '../config/config.service';
 import { DatabaseService } from '../database/database.service';
-import { marketAbi as CONTRACT_ABI } from '../config/market-abi';
 import { RabbitMQProducer } from '../rmq/rmq.producer';
 import { IndexerLogger } from '../logger.service';
+import { RpcPoolService } from '@/rpcPool/rpc-pool.service';
+import { ethers } from 'ethers';
+import { marketAbi as CONTRACT_ABI } from '@/config/market-abi';
 
 @Injectable()
 @Command({
@@ -15,7 +15,7 @@ import { IndexerLogger } from '../logger.service';
   description: 'Run the scanner',
 })
 export class ScannerService extends CommandRunner {
-  public provider: ethers.JsonRpcProvider;
+  public rpcPoolService: RpcPoolService;
   public contractAddress: string;
   public contract: ethers.Contract;
 
@@ -26,14 +26,12 @@ export class ScannerService extends CommandRunner {
     private readonly logger: IndexerLogger,
   ) {
     super();
-    this.provider = new ethers.JsonRpcProvider(
-      this.configService.networkRpcUrl,
-    ); // Init Blockchain RPC Provider
+    this.rpcPoolService = new RpcPoolService(this.configService.rpcConfigs);
     this.contractAddress = this.configService.contractAddress; // P2P Market smart contract address
     this.contract = new ethers.Contract(
       this.contractAddress,
       CONTRACT_ABI,
-      this.provider,
+      this.rpcPoolService.getNextProvider().provider,
     );
   }
 
@@ -63,7 +61,11 @@ export class ScannerService extends CommandRunner {
       );
 
       // Fetch logs from startingBlock to endBlock via RPC blockchain endpoint.
-      const logs = await this.fetchLogs(startingBlock, endBlock);
+      const logs = await this.rpcPoolService.getLogs({
+        fromBlock: startingBlock,
+        toBlock: endBlock,
+        address: [this.contractAddress],
+      });
 
       // Push logs to queue then dataUpdater service will handle them.
       // Handle exception if any log not pushed to queue.
@@ -100,8 +102,7 @@ export class ScannerService extends CommandRunner {
       latestBlockNumber === undefined ||
       latestBlockNumber - startingBlock < batchSize
     ) {
-      // Use getBlockNumberWithRetry to handle exception if network error.
-      return await getBlockNumberWithRetry(this.provider);
+      return await this.rpcPoolService.getBlockNumber();
     }
     return latestBlockNumber;
   }
@@ -114,15 +115,6 @@ export class ScannerService extends CommandRunner {
     return latestBlockNumber - startingBlock < batchSize
       ? latestBlockNumber
       : startingBlock + batchSize;
-  }
-
-  private async fetchLogs(fromBlock: number, toBlock: number): Promise<any[]> {
-    // Use getLogsWithRetry to handle exception if network error.
-    return await getLogsWithRetry(this.provider, {
-      fromBlock,
-      toBlock,
-      address: [this.contractAddress],
-    });
   }
 
   async pushLogsToQueue(logs: any[]): Promise<void | number> {

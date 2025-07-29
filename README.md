@@ -82,6 +82,24 @@ Example:
 
 This mechanism help reindex data in a specific block and still keep rule CIA (Consistency - Integrity - Accurate)
 
+### Rpc Pool
+Rpc pool provides multiple RPC providers with automatic failover, load balancing, and health checking capabilities.
+
+**It includes**:
+- *Multiple RPC Providers*: Support for multiple RPC endpoints with automatic failover
+- *Health Checking*: Automatic health checks to detect and reactivate failed providers
+- *Load Balancing*: Round-robin distribution across active providers
+- *Retry Logic*: Exponential backoff retry mechanism for failed requests
+- *Error Tracking*: Track error counts and automatically deactivate problematic providers
+- *Monitoring*: Pool status monitoring and manual provider reactivation
+  
+**Benefits**:
+1. *High Availability*: Automatic failover between multiple providers
+2. *Better Performance*: Load balancing reduces single provider load
+3. *Reliability*: Health checks ensure only working providers are used
+4. *Monitoring*: Built-in status monitoring and error tracking
+5. *Flexibility*: Easy to add/remove providers without code changes
+
 ## 4. Setup and Installation
 
 ### Prerequisites

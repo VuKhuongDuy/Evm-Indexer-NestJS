@@ -1,4 +1,5 @@
 import { registerAs } from '@nestjs/config';
+import { rpcConfig } from './rpc-config';
 
 export const appConfig = registerAs('app', () => ({
   port: parseInt(process.env.PORT, 10) || 3000,
@@ -22,7 +23,7 @@ export const databaseConfig = registerAs('database', () => ({
 }));
 
 export const networkConfig = registerAs('network', () => ({
-  rpcUrl: process.env.RPC_URL,
+  rpcConfigs: rpcConfig,
   chainId: parseInt(process.env.CHAIN_ID, 10) || 1,
   blockConfirmations: parseInt(process.env.BLOCK_CONFIRMATIONS, 10) || 12,
 }));

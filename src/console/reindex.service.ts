@@ -1,11 +1,11 @@
 import { Command, CommandRunner } from 'nest-commander';
 import { Injectable } from '@nestjs/common';
 import { ethers } from 'ethers';
-import { getBlockNumberWithRetry } from '../shared/rpc-utils';
 import { AppConfigService } from '../config/config.service';
 import { DatabaseService } from '../database/database.service';
-import { marketAbi as CONTRACT_ABI } from '../config/market-abi';
 import { IndexerLogger } from '@/logger.service';
+import { RpcPoolService } from '@/rpcPool/rpc-pool.service';
+import { marketAbi as CONTRACT_ABI } from '@/config/market-abi';
 
 @Injectable()
 @Command({
@@ -14,7 +14,7 @@ import { IndexerLogger } from '@/logger.service';
   arguments: '<reindexBlockHeight>',
 })
 export class ReindexService extends CommandRunner {
-  public provider: ethers.JsonRpcProvider;
+  public rpcPoolService: RpcPoolService;
   public contractAddress: string;
   public contract: ethers.Contract;
 
@@ -24,14 +24,12 @@ export class ReindexService extends CommandRunner {
     private readonly logger: IndexerLogger,
   ) {
     super();
-    this.provider = new ethers.JsonRpcProvider(
-      this.configService.networkRpcUrl,
-    ); // Init Blockchain RPC Provider
+    this.rpcPoolService = new RpcPoolService(this.configService.rpcConfigs);
     this.contractAddress = this.configService.contractAddress; // P2P Market smart contract address
     this.contract = new ethers.Contract(
       this.contractAddress,
       CONTRACT_ABI,
-      this.provider,
+      this.rpcPoolService.getNextProvider().provider,
     );
   }
 
@@ -51,7 +49,7 @@ export class ReindexService extends CommandRunner {
     }
 
     this.logger.log(`Reindex service started from block ${reindexBlockHeight}`);
-    const latestBlockHeight = await getBlockNumberWithRetry(this.provider);
+    const latestBlockHeight = await this.rpcPoolService.getBlockNumber();
     const currentBlockHeight = parseInt(
       await this.databaseService.getConfig('currentBlockHeight'),
       10,

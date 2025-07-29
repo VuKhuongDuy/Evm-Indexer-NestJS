@@ -11,6 +11,7 @@ import { DatabaseService } from '../database/database.service';
 import { marketAbi as CONTRACT_ABI } from '../config/market-abi';
 import { RabbitMQProducer } from '@/rmq/rmq.producer';
 import { IndexerLogger } from '../logger.service';
+import { RpcPoolService } from '@/rpcPool/rpc-pool.service';
 
 interface MessageMetadata {
   retryCount?: number;
@@ -20,7 +21,7 @@ interface MessageMetadata {
 
 @Controller()
 export class DataUpdaterController {
-  public provider: ethers.JsonRpcProvider;
+  public rpcPoolService: RpcPoolService;
   public contractAddress: string;
   public contract: ethers.Contract;
   private readonly maxRetries = 3;
@@ -32,14 +33,12 @@ export class DataUpdaterController {
     private readonly rabbitMQProducer: RabbitMQProducer,
     private readonly logger: IndexerLogger,
   ) {
-    this.provider = new ethers.JsonRpcProvider(
-      this.configService.networkRpcUrl,
-    );
+    this.rpcPoolService = new RpcPoolService(this.configService.rpcConfigs);
     this.contractAddress = this.configService.contractAddress;
     this.contract = new ethers.Contract(
       this.contractAddress,
       CONTRACT_ABI,
-      this.provider,
+      this.rpcPoolService.getNextProvider().provider,
     );
   }
 

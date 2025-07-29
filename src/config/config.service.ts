@@ -1,3 +1,4 @@
+import { RpcPoolConfig } from '@/rpcPool/rpc-pool.service';
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 
@@ -58,8 +59,8 @@ export class AppConfigService {
     return this.configService.get<any[]>('database.entities');
   }
 
-  get networkRpcUrl(): string {
-    return this.configService.get<string>('network.rpcUrl');
+  get rpcConfigs(): RpcPoolConfig {
+    return this.configService.get<RpcPoolConfig>('network.rpcConfigs');
   }
 
   get networkChainId(): number {
@@ -134,7 +135,7 @@ export class AppConfigService {
         entities: this.databaseEntities,
       },
       network: {
-        rpcUrl: this.networkRpcUrl,
+        rpcConfigs: this.rpcConfigs,
         chainId: this.networkChainId,
       },
       jwt: {

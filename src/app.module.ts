@@ -20,6 +20,7 @@ import { RabbitMQModule } from './rmq/rmq.module';
 import { OrderModule } from './order/order.module';
 import { IndexerLogger } from './logger.service';
 import { MetricsModule } from './metrics/metrics.module';
+import { RpcPoolModule } from './rpcPool/rpc-pool.module';
 
 @Module({
   imports: [
@@ -41,6 +42,7 @@ import { MetricsModule } from './metrics/metrics.module';
     RabbitMQModule,
     OrderModule,
     MetricsModule,
+    RpcPoolModule,
   ],
   controllers: [AppController],
   providers: [AppService, AppConfigService, IndexerLogger],

@@ -5,10 +5,11 @@ import { AppConfigService } from '../config/config.service';
 import { DatabaseService } from '../database/database.service';
 import { marketAbi as CONTRACT_ABI } from '../config/market-abi';
 import { RabbitMQProducer } from '@/rmq/rmq.producer';
+import { RpcPoolService } from '@/rpcPool/rpc-pool.service';
 
 @Controller()
 export class NotifierController {
-  public provider: ethers.JsonRpcProvider;
+  public rpcPoolService: RpcPoolService;
   public contractAddress: string;
   public contract: ethers.Contract;
 
@@ -17,14 +18,12 @@ export class NotifierController {
     private readonly databaseService: DatabaseService,
     private readonly rabbitMQProducer: RabbitMQProducer,
   ) {
-    this.provider = new ethers.JsonRpcProvider(
-      this.configService.networkRpcUrl,
-    );
+    this.rpcPoolService = new RpcPoolService(this.configService.rpcConfigs);
     this.contractAddress = this.configService.contractAddress;
     this.contract = new ethers.Contract(
       this.contractAddress,
       CONTRACT_ABI,
-      this.provider,
+      this.rpcPoolService.getNextProvider().provider,
     );
   }
 
