@@ -71,6 +71,17 @@ The backend service is built with a microservices architecture providing:
 └─────────────────┘    └─────────────────┘    └─────────────────┘
 ```
 
+### Reindex mechanism
+This indexer use mechanism save multiple state record for an entity.
+Example:
+| orderId | amountToSell | isActive | blockNumber |
+|---------|--------------|----------|-------------|
+| 1       | 100          | true     | 8791901     |
+| 1       | 50           | true     | 8791902     |
+| 2       | 210          | true     | 8791903     |
+
+This mechanism help reindex data in a specific block and still keep rule CIA (Consistency - Integrity - Accurate)
+
 ## 4. Setup and Installation
 
 ### Prerequisites
