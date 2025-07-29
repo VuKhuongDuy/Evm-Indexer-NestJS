@@ -17,13 +17,13 @@ The EVM Indexer is a high-performance, scalable blockchain event indexing system
 This project consists of multiple repositories working together:
 
 ### Core Repositories
-- **[EVM Indexer Backend](https://github.com/your-org/evm-indexer-nestjs)** (Current Repository)
+- **[EVM Indexer Backend](https://github.com/VuKhuongDuy/Evm-Indexer-NestJS)** (Current Repository)
   - High-performance event indexing service
   - REST API with Swagger documentation
   - Command-line tools for management
   - Database management and data consistency
 
-- **[Smart Contract](https://github.com/your-org/evm-indexer-contracts)**
+- **[Smart Contract](https://github.com/VuKhuongDuy/EVM-Contract-P2P-Market)**
   - P2P Market smart contract implementation
   - Event definitions and ABI specifications
   - Contract deployment scripts and tests
@@ -33,15 +33,11 @@ This project consists of multiple repositories working together:
   - Data generation scripts for testing
   - Benchmark results and analysis tools
 
-- **[Monitoring Dashboard](https://github.com/your-org/evm-indexer-monitor)**
+- **[Monitoring](https://github.com/VuKhuongDuy/Monitor-wallets-GPN)**
   - Real-time performance metrics
   - Health check endpoints
   - Alerting and notification system
 
-- **[Log Management](https://github.com/your-org/evm-indexer-logs)**
-  - Centralized logging infrastructure
-  - Log aggregation and analysis
-  - Audit trail and compliance reporting
 
 ## 3. Backend Services Architecture
 
@@ -85,20 +81,20 @@ This mechanism help reindex data in a specific block and still keep rule CIA (Co
 ### Rpc Pool
 Rpc pool provides multiple RPC providers with automatic failover, load balancing, and health checking capabilities.
 
-**It includes**:
-- *Multiple RPC Providers*: Support for multiple RPC endpoints with automatic failover
-- *Health Checking*: Automatic health checks to detect and reactivate failed providers
-- *Load Balancing*: Round-robin distribution across active providers
-- *Retry Logic*: Exponential backoff retry mechanism for failed requests
-- *Error Tracking*: Track error counts and automatically deactivate problematic providers
-- *Monitoring*: Pool status monitoring and manual provider reactivation
+**Includes**:
+- **Multiple RPC Providers**: Support for multiple RPC endpoints with automatic failover
+- **Health Checking**: Automatic health checks to detect and reactivate failed providers
+- **Load Balancing**: Round-robin distribution across active providers
+- **Retry Logic**: Exponential backoff retry mechanism for failed requests
+- **Error Tracking**: Track error counts and automatically deactivate problematic providers
+- **Monitoring**: Pool status monitoring and manual provider reactivation
   
 **Benefits**:
-1. *High Availability*: Automatic failover between multiple providers
-2. *Better Performance*: Load balancing reduces single provider load
-3. *Reliability*: Health checks ensure only working providers are used
-4. *Monitoring*: Built-in status monitoring and error tracking
-5. *Flexibility*: Easy to add/remove providers without code changes
+1. **High Availability**: Automatic failover between multiple providers
+2. **Better Performance**: Load balancing reduces single provider load
+3. **Reliability**: Health checks ensure only working providers are used
+4. **Monitoring**: Built-in status monitoring and error tracking
+5. **Flexibility**: Easy to add/remove providers without code changes
 
 ## 4. Setup and Installation
 
@@ -106,7 +102,6 @@ Rpc pool provides multiple RPC providers with automatic failover, load balancing
 - Node.js 18+
 - Docker and Docker Compose
 - PostgreSQL 15+
-- Redis 6+
 - RabbitMQ 3.8+ or Apache Kafka 2.8+
 
 ### Quick Start with Docker
@@ -130,7 +125,7 @@ docker-compose logs -f
 
 ```bash
 # Start database and cache services
-docker-compose up -d postgres redis rabbitmq
+docker-compose up -d postgres rabbitmq
 
 # Install dependencies
 npm install
@@ -138,8 +133,11 @@ npm install
 # Initialize database
 npm run cli init-db
 
-# Start application
+# Start API server
 npm run start:dev
+
+# Run indexer
+npm run cli run-scanner
 ```
 
 ### Environment Configuration
