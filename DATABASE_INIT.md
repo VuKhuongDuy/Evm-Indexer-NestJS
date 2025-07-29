@@ -56,7 +56,7 @@ The following default configuration values are inserted during initialization:
 
 | Key | Value | Description |
 |-----|-------|-------------|
-| `fromBlock` | `0` | Starting block for indexing |
+| `initializationBlock` | `0` | Starting block for indexing |
 | `lastProcessedBlock` | `0` | Last processed block |
 | `indexerStatus` | `stopped` | Current indexer status |
 | `createdAt` | `NOW()` | Creation timestamp |

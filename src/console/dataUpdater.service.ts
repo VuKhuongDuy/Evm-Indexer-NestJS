@@ -57,7 +57,6 @@ export class DataUpdaterController {
     console.log(
       `Processing log (attempt ${metadata.retryCount + 1}/${this.maxRetries + 1}):`,
     );
-    console.log(log);
 
     try {
       switch (log.name) {
@@ -158,38 +157,38 @@ export class DataUpdaterController {
       throw new Error(`Order not found: ${eventFilledData.orderId}`);
     }
 
-    await this.databaseService.updateOrder({
+    await this.databaseService.createOrder({
       ...existingOrder,
       amountRemaining: (
         BigInt(existingOrder.amountToSell) -
         BigInt(eventFilledData.amountFilled)
       ).toString(),
+      createdAtBlockNumber: log.blockNumber,
     });
 
-    // Publish to RabbitMQ (uncomment if needed)
-    // await this.rabbitMQProducer.publishLog({
-    //   ...eventFilledData,
-    //   eventType: 'OrderFilled',
-    //   blockNumber: log.blockNumber,
-    //   transactionHash: log.transactionHash,
-    // });
+    await this.rabbitMQProducer.publishLogToEventsQueue({
+      orderId: eventFilledData.orderId,
+      seller: existingOrder.seller,
+      transactionHash: log.transactionHash,
+    });
   }
 
   private async handleOrderCancelled(log: any): Promise<void> {
-    const orderCancelledData = {
+    const existingOrder = await this.databaseService.getOrder(
+      log.orderId.toString(),
+    );
+
+    await this.databaseService.createOrder({
+      ...existingOrder,
+      isActive: false,
+      createdAtBlockNumber: log.blockNumber,
+    });
+
+    await this.rabbitMQProducer.publishLogToEventsQueue({
       orderId: log.orderId.toString(),
-      seller: log.seller,
-    };
-
-    await this.databaseService.deleteOrder(orderCancelledData.orderId);
-
-    // Publish to RabbitMQ (uncomment if needed)
-    // await this.rabbitMQProducer.publishOrderCancelled({
-    //   ...orderCancelledData,
-    //   eventType: 'OrderCancelled',
-    //   blockNumber: log.blockNumber,
-    //   transactionHash: log.transactionHash,
-    // });
+      seller: existingOrder.seller,
+      transactionHash: log.transactionHash,
+    });
   }
 
   private async handleOrderUpdated(log: any): Promise<void> {
@@ -205,19 +204,18 @@ export class DataUpdaterController {
       throw new Error(`Order not found: ${eventUpdatedData.orderId}`);
     }
 
-    await this.databaseService.updateOrder({
+    await this.databaseService.createOrder({
       ...order,
       pricePerToken: eventUpdatedData.newPrice,
       minOrderSize: eventUpdatedData.newMinOrderSize,
+      createdAtBlockNumber: log.blockNumber,
     });
 
-    // Publish to RabbitMQ (uncomment if needed)
-    // await this.rabbitMQProducer.publishOrderUpdated({
-    //   ...eventUpdatedData,
-    //   eventType: 'OrderUpdated',
-    //   blockNumber: log.blockNumber,
-    //   transactionHash: log.transactionHash,
-    // });
+    await this.rabbitMQProducer.publishLogToEventsQueue({
+      orderId: eventUpdatedData.orderId,
+      seller: order.seller,
+      transactionHash: log.transactionHash,
+    });
   }
 
   private async delay(ms: number): Promise<void> {

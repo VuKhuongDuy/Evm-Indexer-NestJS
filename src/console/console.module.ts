@@ -20,6 +20,7 @@ import { Order } from '../database/entities/order.entity';
 import { RabbitMQModule } from '../rmq/rmq.module';
 import { DataUpdaterController } from './dataUpdater.service';
 import { NotifierController } from './notifier.service';
+import { ReindexService } from './reindex.service';
 
 @Module({
   imports: [
@@ -44,7 +45,12 @@ import { NotifierController } from './notifier.service';
     }),
     RabbitMQModule,
   ],
-  providers: [ScannerService, AppConfigService, DatabaseService],
+  providers: [
+    ScannerService,
+    AppConfigService,
+    DatabaseService,
+    ReindexService,
+  ],
   controllers: [DataUpdaterController, NotifierController],
 })
 export class ConsoleModule {}

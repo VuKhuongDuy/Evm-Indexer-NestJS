@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Between, Repository } from 'typeorm';
 import { Config } from './entities/config.entity';
 import { Order } from './entities/order.entity';
 
@@ -47,7 +47,8 @@ export class DatabaseService {
 
   private async seedDefaultConfig(): Promise<void> {
     const defaultConfigs = [
-      { key: 'fromBlock', value: '0' },
+      { key: 'initializationBlock', value: '0' },
+      { key: 'currentBlockHeight', value: '0' },
       { key: 'updateAt', value: new Date().toISOString() },
     ];
 
@@ -98,8 +99,34 @@ export class DatabaseService {
     }
   }
 
-  async getOrders(): Promise<Order[]> {
-    return this.orderRepository.find();
+  async getOrders(
+    limit?: number,
+    offset?: number,
+  ): Promise<{ orders: Order[]; total: number }> {
+    // Using query builder to implement the logic from the SQL query
+    // Adapted to current schema: using amountRemaining instead of amount, isActive instead of event_type
+    const queryBuilder = this.orderRepository
+      .createQueryBuilder('order')
+      .distinctOn(['order.orderId'])
+      .orderBy('order.orderId', 'ASC')
+      .addOrderBy('order.createdAtBlockNumber', 'DESC')
+      .where('order.isActive = :isActive', { isActive: true })
+      .andWhere('CAST(order.amountRemaining AS DECIMAL) > 0');
+
+    // Get total count for pagination
+    const total = await queryBuilder.getCount();
+
+    // Apply pagination if parameters are provided
+    if (limit !== undefined) {
+      queryBuilder.limit(limit);
+    }
+    if (offset !== undefined) {
+      queryBuilder.offset(offset);
+    }
+
+    const orders = await queryBuilder.getMany();
+
+    return { orders, total };
   }
 
   async getOrder(orderId: string): Promise<Order | null> {
@@ -118,5 +145,15 @@ export class DatabaseService {
 
   async deleteOrder(orderId: string): Promise<void> {
     await this.orderRepository.delete(orderId);
+  }
+
+  async deleteManyOrders(fromHeight: number, toHeight: number): Promise<void> {
+    await this.orderRepository.delete({
+      createdAtBlockNumber: Between(fromHeight, toHeight),
+    });
+  }
+
+  async clearOrders(): Promise<void> {
+    await this.orderRepository.clear();
   }
 }

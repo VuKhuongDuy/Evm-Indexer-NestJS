@@ -26,9 +26,9 @@ export class Order {
   @Column()
   minOrderSize: string;
 
-  @Column()
+  @Column({ default: true })
   isActive: boolean;
 
-  @Column()
+  @PrimaryColumn()
   createdAtBlockNumber: number;
 }

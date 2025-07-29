@@ -9,7 +9,8 @@ CREATE TABLE IF NOT EXISTS config (
 
 -- Insert default configuration values
 INSERT INTO config (key, value) VALUES
-    ('fromBlock', '0'),
+    ('initializationBlock', '0'),
+    ('currentBlockHeight', '0'),
     ('lastProcessedBlock', '0'),
     ('indexerStatus', 'stopped'),
     ('createdAt', NOW()::TEXT),
