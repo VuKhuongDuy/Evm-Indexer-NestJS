@@ -8,6 +8,8 @@ import { rabbitmqConfig as rabbitmqConfigEnv } from '@/config/env.config';
 import { rabbitmqProducerConfig } from './rmqConfig';
 import { AppConfigService } from '@/config/config.service';
 import { IndexerLogger } from '@/logger.service';
+import { MetricsService } from '@/metrics/metrics.service';
+import { MetricsModule } from '@/metrics/metrics.module';
 
 @Module({
   imports: [
@@ -37,6 +39,7 @@ import { IndexerLogger } from '@/logger.service';
         inject: [ConfigService],
       },
     ]),
+    MetricsModule,
   ],
   providers: [
     RabbitMQService,

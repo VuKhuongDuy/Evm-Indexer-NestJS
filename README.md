@@ -262,6 +262,8 @@ docker-compose logs app | grep ERROR
 
 ## 6. Performance Results
 
+Metrics API endpoint: http://localhost:3000/api/v1/metrics
+
 ### Speed and Throughput
 
 | Metric | Value | Description |

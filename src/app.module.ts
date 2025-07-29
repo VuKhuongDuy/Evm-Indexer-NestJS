@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AppConfigService } from './config/config.service';
@@ -18,6 +19,7 @@ import { ConsoleModule } from './console/console.module';
 import { RabbitMQModule } from './rmq/rmq.module';
 import { OrderModule } from './order/order.module';
 import { IndexerLogger } from './logger.service';
+import { MetricsModule } from './metrics/metrics.module';
 
 @Module({
   imports: [
@@ -38,6 +40,7 @@ import { IndexerLogger } from './logger.service';
     ConsoleModule,
     RabbitMQModule,
     OrderModule,
+    MetricsModule,
   ],
   controllers: [AppController],
   providers: [AppService, AppConfigService, IndexerLogger],
