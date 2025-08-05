@@ -219,7 +219,9 @@ export class RpcPoolService {
         return result;
       } catch (error) {
         lastError = error;
-        this.markProviderError(provider.id);
+        if (error.code === 429) {
+          this.markProviderError(provider.id);
+        }
 
         // If it's the last attempt or not a retryable error, throw the error
         if (
